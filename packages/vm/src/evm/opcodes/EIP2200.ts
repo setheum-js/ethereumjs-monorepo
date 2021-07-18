@@ -24,7 +24,7 @@ export function updateSstoreGasEIP2200(runState: RunState, found: any, value: Bu
   if (current.equals(value)) {
     const sstoreNoopCost = runState._common.param('gasPrices', 'sstoreNoopGasEIP2200')
     return runState.eei.useGas(
-      new BN(adjustSstoreGasEIP2929(runState, key, sstoreNoopCost, 'noop')),
+      adjustSstoreGasEIP2929(runState, key, sstoreNoopCost, 'noop'),
       'EIP-2200 -> sstoreNoopGasEIP2200'
     )
   }
@@ -69,14 +69,14 @@ export function updateSstoreGasEIP2200(runState: RunState, found: any, value: Bu
       // Reset to original non-existent slot
       const sstoreInitRefund = runState._common.param('gasPrices', 'sstoreInitRefundEIP2200')
       runState.eei.refundGas(
-        new BN(adjustSstoreGasEIP2929(runState, key, sstoreInitRefund, 'initRefund')),
+        adjustSstoreGasEIP2929(runState, key, sstoreInitRefund, 'initRefund'),
         'EIP-2200 -> initRefund'
       )
     } else {
       // Reset to original existing slot
       const sstoreCleanRefund = runState._common.param('gasPrices', 'sstoreCleanRefundEIP2200')
       runState.eei.refundGas(
-        new BN(adjustSstoreGasEIP2929(runState, key, sstoreCleanRefund, 'cleanRefund')),
+        adjustSstoreGasEIP2929(runState, key, sstoreCleanRefund, 'cleanRefund'),
         'EIP-2200 -> cleanRefund'
       )
     }

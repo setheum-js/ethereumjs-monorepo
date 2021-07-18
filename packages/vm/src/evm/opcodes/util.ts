@@ -208,12 +208,12 @@ export function maxCallGas(gasLimit: BN, gasLeft: BN, runState: RunState): BN {
  * @param {BN} offset
  * @param {BN} length
  */
-export function subMemUsage(runState: RunState, offset: BN, length: BN) {
+export function subMemUsage(runState: RunState, offset: BN, length: BN): BN {
   // YP (225): access with zero length will not extend the memory
-  if (length.isZero()) return
+  if (length.isZero()) return new BN(0)
 
   const newMemoryWordCount = divCeil(offset.add(length), new BN(32))
-  if (newMemoryWordCount.lte(runState.memoryWordCount)) return
+  if (newMemoryWordCount.lte(runState.memoryWordCount)) return new BN(0)
 
   const words = newMemoryWordCount
   const fee = new BN(runState._common.param('gasPrices', 'memory'))
@@ -222,11 +222,13 @@ export function subMemUsage(runState: RunState, offset: BN, length: BN) {
   const cost = words.mul(fee).add(words.mul(words).div(quadCoeff))
 
   if (cost.gt(runState.highestMemCost)) {
-    runState.eei.useGas(cost.sub(runState.highestMemCost), 'subMemUsage')
+    cost.isub(runState.highestMemCost)
     runState.highestMemCost = cost
   }
 
   runState.memoryWordCount = newMemoryWordCount
+
+  return cost
 }
 
 /**
@@ -260,12 +262,12 @@ export function updateSstoreGas(runState: RunState, found: any, value: Buffer, k
   const sstoreResetCost = runState._common.param('gasPrices', 'sstoreReset')
   if ((value.length === 0 && !found.length) || (value.length !== 0 && found.length)) {
     runState.eei.useGas(
-      new BN(adjustSstoreGasEIP2929(runState, keyBuf, sstoreResetCost, 'reset')),
+      adjustSstoreGasEIP2929(runState, keyBuf, sstoreResetCost, 'reset'),
       'updateSstoreGas'
     )
   } else if (value.length === 0 && found.length) {
     runState.eei.useGas(
-      new BN(adjustSstoreGasEIP2929(runState, keyBuf, sstoreResetCost, 'reset')),
+      adjustSstoreGasEIP2929(runState, keyBuf, sstoreResetCost, 'reset'),
       'updateSstoreGas'
     )
     runState.eei.refundGas(

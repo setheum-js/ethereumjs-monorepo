@@ -386,16 +386,10 @@ export const handlers: Map<number, OpHandler> = new Map([
     0x20,
     function (runState: RunState) {
       const [offset, length] = runState.stack.popN(2)
-      subMemUsage(runState, offset, length)
       let data = Buffer.alloc(0)
       if (!length.isZero()) {
         data = runState.memory.read(offset.toNumber(), length.toNumber())
       }
-      // copy fee
-      runState.eei.useGas(
-        new BN(runState._common.param('gasPrices', 'sha3Word')).imul(divCeil(length, new BN(32))),
-        'SHA3 opcode'
-      )
       const r = new BN(keccak256(data))
       runState.stack.push(r)
     },
@@ -415,7 +409,6 @@ export const handlers: Map<number, OpHandler> = new Map([
     async function (runState: RunState) {
       const addressBN = runState.stack.pop()
       const address = new Address(addressToBuffer(addressBN))
-      accessAddressEIP2929(runState, address)
       const balance = await runState.eei.getExternalBalance(address)
       runState.stack.push(balance)
     },
@@ -473,14 +466,7 @@ export const handlers: Map<number, OpHandler> = new Map([
     function (runState: RunState) {
       const [memOffset, dataOffset, dataLength] = runState.stack.popN(3)
 
-      subMemUsage(runState, memOffset, dataLength)
-
       if (!dataLength.eqn(0)) {
-        runState.eei.useGas(
-          new BN(runState._common.param('gasPrices', 'copy')).imul(divCeil(dataLength, new BN(32))),
-          'CALLDATACOPY opcode'
-        )
-
         const data = getDataSlice(runState.eei.getCallData(), dataOffset, dataLength)
         const memOffsetNum = memOffset.toNumber()
         const dataLengthNum = dataLength.toNumber()
@@ -502,14 +488,7 @@ export const handlers: Map<number, OpHandler> = new Map([
     function (runState: RunState) {
       const [memOffset, codeOffset, dataLength] = runState.stack.popN(3)
 
-      subMemUsage(runState, memOffset, dataLength)
-
       if (!dataLength.eqn(0)) {
-        runState.eei.useGas(
-          new BN(runState._common.param('gasPrices', 'copy')).imul(divCeil(dataLength, new BN(32))),
-          'CODECOPY opcode'
-        )
-
         const data = getDataSlice(runState.eei.getCode(), codeOffset, dataLength)
         const memOffsetNum = memOffset.toNumber()
         const lengthNum = dataLength.toNumber()
@@ -523,8 +502,6 @@ export const handlers: Map<number, OpHandler> = new Map([
     0x3b,
     async function (runState: RunState) {
       const addressBN = runState.stack.pop()
-      const address = new Address(addressToBuffer(addressBN))
-      accessAddressEIP2929(runState, address)
       const size = await runState.eei.getExternalCodeSize(addressBN)
       runState.stack.push(size)
     },
@@ -535,18 +512,7 @@ export const handlers: Map<number, OpHandler> = new Map([
     async function (runState: RunState) {
       const [addressBN, memOffset, codeOffset, dataLength] = runState.stack.popN(4)
 
-      // FIXME: for some reason this must come before subGas
-      subMemUsage(runState, memOffset, dataLength)
-      const address = new Address(addressToBuffer(addressBN))
-      accessAddressEIP2929(runState, address)
-
       if (!dataLength.eqn(0)) {
-        // copy fee
-        runState.eei.useGas(
-          new BN(runState._common.param('gasPrices', 'copy')).imul(divCeil(dataLength, new BN(32))),
-          'EXTCODECOPY opcode'
-        )
-
         const code = await runState.eei.getExternalCode(addressBN)
 
         const data = getDataSlice(code, codeOffset, dataLength)
@@ -563,7 +529,6 @@ export const handlers: Map<number, OpHandler> = new Map([
     async function (runState: RunState) {
       const addressBN = runState.stack.pop()
       const address = new Address(addressToBuffer(addressBN))
-      accessAddressEIP2929(runState, address)
       const empty = await runState.eei.isAccountEmpty(address)
       if (empty) {
         runState.stack.push(new BN(0))
@@ -596,14 +561,7 @@ export const handlers: Map<number, OpHandler> = new Map([
         trap(ERROR.OUT_OF_GAS)
       }
 
-      subMemUsage(runState, memOffset, dataLength)
-
       if (!dataLength.eqn(0)) {
-        runState.eei.useGas(
-          new BN(runState._common.param('gasPrices', 'copy')).mul(divCeil(dataLength, new BN(32))),
-          'RETURNDATACOPY opcode'
-        )
-
         const data = getDataSlice(runState.eei.getReturnData(), returnDataOffset, dataLength)
         const memOffsetNum = memOffset.toNumber()
         const lengthNum = dataLength.toNumber()
