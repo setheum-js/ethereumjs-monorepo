@@ -27,6 +27,7 @@ export interface RunState {
   _common: Common
   stateManager: StateManager
   eei: EEI
+  messageGasLimit?: BN // Cache value from `gas.ts` to save gas limit for a message call
 }
 
 export interface InterpreterResult {
@@ -47,7 +48,7 @@ export interface InterpreterStep {
   memoryWordCount: BN
   opcode: {
     name: string
-    fee: number
+    fee: BN
     isAsync: boolean
   }
   account: Account
@@ -145,7 +146,7 @@ export default class Interpreter {
 
     if (opInfo.dynamicGas) {
       const dynamicGasHandler = dynamicGasHandlers.get(this._runState.opCode)!
-      gas.iadd(dynamicGasHandler(this._runState))
+      gas.iadd(await dynamicGasHandler(this._runState))
     }
 
     // TODO: figure out if we should try/catch this (in case step event throws)
@@ -157,7 +158,7 @@ export default class Interpreter {
     }
 
     // Reduce opcode's base fee
-    this._eei.useGas(new BN(opInfo.fee), `${opInfo.name} (base fee)`)
+    this._eei.useGas(gas, `${opInfo.name} fee`)
     // Advance program counter
     this._runState.programCounter++
 
@@ -193,7 +194,7 @@ export default class Interpreter {
       gasRefund: this._eei._evm._refund,
       opcode: {
         name: opcode.fullName,
-        fee: fee.toNumber(),
+        fee: fee,
         isAsync: opcode.isAsync,
       },
       stack: this._runState.stack._store,

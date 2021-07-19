@@ -258,23 +258,19 @@ export function writeCallOutput(runState: RunState, outOffset: BN, outLength: BN
  * @param {Buffer}   value
  * @param {Buffer}   keyBuf
  */
-export function updateSstoreGas(runState: RunState, found: any, value: Buffer, keyBuf: Buffer) {
+export function updateSstoreGas(runState: RunState, found: any, value: Buffer, keyBuf: Buffer): BN {
   const sstoreResetCost = runState._common.param('gasPrices', 'sstoreReset')
   if ((value.length === 0 && !found.length) || (value.length !== 0 && found.length)) {
-    runState.eei.useGas(
-      adjustSstoreGasEIP2929(runState, keyBuf, sstoreResetCost, 'reset'),
-      'updateSstoreGas'
-    )
+    return adjustSstoreGasEIP2929(runState, keyBuf, sstoreResetCost, 'reset')
   } else if (value.length === 0 && found.length) {
-    runState.eei.useGas(
-      adjustSstoreGasEIP2929(runState, keyBuf, sstoreResetCost, 'reset'),
-      'updateSstoreGas'
-    )
+    const gas = adjustSstoreGasEIP2929(runState, keyBuf, sstoreResetCost, 'reset')
     runState.eei.refundGas(
       new BN(runState._common.param('gasPrices', 'sstoreRefund')),
       'updateSstoreGas'
     )
+    return gas
   } else if (value.length !== 0 && !found.length) {
-    runState.eei.useGas(new BN(runState._common.param('gasPrices', 'sstoreSet')), 'updateSstoreGas')
+    return new BN(runState._common.param('gasPrices', 'sstoreSet'))
   }
+  return new BN(0)
 }

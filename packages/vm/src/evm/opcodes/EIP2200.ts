@@ -11,7 +11,12 @@ import { trap } from './util'
  * @param {any}      found
  * @param {Buffer}   value
  */
-export function updateSstoreGasEIP2200(runState: RunState, found: any, value: Buffer, key: Buffer) {
+export function updateSstoreGasEIP2200(
+  runState: RunState,
+  found: any,
+  value: Buffer,
+  key: Buffer
+): BN {
   const { original, current } = found
   // Fail if not enough gas is left
   if (
@@ -23,18 +28,12 @@ export function updateSstoreGasEIP2200(runState: RunState, found: any, value: Bu
   // Noop
   if (current.equals(value)) {
     const sstoreNoopCost = runState._common.param('gasPrices', 'sstoreNoopGasEIP2200')
-    return runState.eei.useGas(
-      adjustSstoreGasEIP2929(runState, key, sstoreNoopCost, 'noop'),
-      'EIP-2200 -> sstoreNoopGasEIP2200'
-    )
+    return adjustSstoreGasEIP2929(runState, key, sstoreNoopCost, 'noop')
   }
   if (original.equals(current)) {
     // Create slot
     if (original.length === 0) {
-      return runState.eei.useGas(
-        new BN(runState._common.param('gasPrices', 'sstoreInitGasEIP2200')),
-        'EIP-2200 -> sstoreInitGasEIP2200'
-      )
+      return new BN(runState._common.param('gasPrices', 'sstoreInitGasEIP2200'))
     }
     // Delete slot
     if (value.length === 0) {
@@ -44,10 +43,7 @@ export function updateSstoreGasEIP2200(runState: RunState, found: any, value: Bu
       )
     }
     // Write existing slot
-    return runState.eei.useGas(
-      new BN(runState._common.param('gasPrices', 'sstoreCleanGasEIP2200')),
-      'EIP-2200 -> sstoreCleanGasEIP2200'
-    )
+    return new BN(runState._common.param('gasPrices', 'sstoreCleanGasEIP2200'))
   }
   if (original.length > 0) {
     if (current.length === 0) {
@@ -82,8 +78,5 @@ export function updateSstoreGasEIP2200(runState: RunState, found: any, value: Bu
     }
   }
   // Dirty update
-  return runState.eei.useGas(
-    new BN(runState._common.param('gasPrices', 'sstoreDirtyGasEIP2200')),
-    'EIP-2200 -> sstoreDirtyGasEIP2200'
-  )
+  return new BN(runState._common.param('gasPrices', 'sstoreDirtyGasEIP2200'))
 }

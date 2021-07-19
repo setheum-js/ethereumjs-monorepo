@@ -8,25 +8,18 @@ import { RunState } from './../interpreter'
  * @param {any}      found
  * @param {Buffer}   value
  */
-export function updateSstoreGasEIP1283(runState: RunState, found: any, value: Buffer) {
+export function updateSstoreGasEIP1283(runState: RunState, found: any, value: Buffer): BN {
   const { original, current } = found
   if (current.equals(value)) {
     // If current value equals new value (this is a no-op), 200 gas is deducted.
-    runState.eei.useGas(
-      new BN(runState._common.param('gasPrices', 'netSstoreNoopGas')),
-      'EIP-1283 -> netSstoreNoopGas'
-    )
-    return
+    return new BN(runState._common.param('gasPrices', 'netSstoreNoopGas'))
   }
   // If current value does not equal new value
   if (original.equals(current)) {
     // If original value equals current value (this storage slot has not been changed by the current execution context)
     if (original.length === 0) {
       // If original value is 0, 20000 gas is deducted.
-      return runState.eei.useGas(
-        new BN(runState._common.param('gasPrices', 'netSstoreInitGas')),
-        'EIP-1283 -> netSstoreInitGas'
-      )
+      return new BN(runState._common.param('gasPrices', 'netSstoreInitGas'))
     }
     if (value.length === 0) {
       // If new value is 0, add 15000 gas to refund counter.
@@ -36,10 +29,7 @@ export function updateSstoreGasEIP1283(runState: RunState, found: any, value: Bu
       )
     }
     // Otherwise, 5000 gas is deducted.
-    return runState.eei.useGas(
-      new BN(runState._common.param('gasPrices', 'netSstoreCleanGas')),
-      'EIP-1283 -> netSstoreCleanGas'
-    )
+    return new BN(runState._common.param('gasPrices', 'netSstoreCleanGas'))
   }
   // If original value does not equal current value (this storage slot is dirty), 200 gas is deducted. Apply both of the following clauses.
   if (original.length !== 0) {
@@ -74,8 +64,5 @@ export function updateSstoreGasEIP1283(runState: RunState, found: any, value: Bu
       )
     }
   }
-  return runState.eei.useGas(
-    new BN(runState._common.param('gasPrices', 'netSstoreDirtyGas')),
-    'EIP-1283 -> netSstoreDirtyGas'
-  )
+  return new BN(runState._common.param('gasPrices', 'netSstoreDirtyGas'))
 }
