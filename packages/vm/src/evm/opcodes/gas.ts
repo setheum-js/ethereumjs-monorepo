@@ -310,7 +310,11 @@ export const dynamicGasHandlers: Map<number, AsyncDynamicGasHandler> = new Map([
       if (!value.isZero()) {
         gas.iadd(new BN(runState._common.param('gasPrices', 'callValueTransfer')))
       }
-      const gasLimit = maxCallGas(currentGasLimit, runState.eei.getGasLeft().isub(gas), runState)
+      const gasLimit = maxCallGas(
+        currentGasLimit.clone(),
+        runState.eei.getGasLeft().isub(gas),
+        runState
+      )
       // note that TangerineWhistle or later this cannot happen (it could have ran out of gas prior to getting here though)
       if (gasLimit.gt(runState.eei.getGasLeft().isub(gas))) {
         trap(ERROR.OUT_OF_GAS)
@@ -346,7 +350,11 @@ export const dynamicGasHandlers: Map<number, AsyncDynamicGasHandler> = new Map([
       gas.iadd(subMemUsage(runState, inOffset, inLength))
       gas.iadd(subMemUsage(runState, outOffset, outLength))
       gas.iadd(accessAddressEIP2929(runState, toAddress))
-      const gasLimit = maxCallGas(currentGasLimit, runState.eei.getGasLeft().isub(gas), runState)
+      const gasLimit = maxCallGas(
+        currentGasLimit.clone(),
+        runState.eei.getGasLeft().isub(gas),
+        runState
+      )
       // note that TangerineWhistle or later this cannot happen (it could have ran out of gas prior to getting here though)
       if (gasLimit.gt(runState.eei.getGasLeft().isub(gas))) {
         trap(ERROR.OUT_OF_GAS)
@@ -386,7 +394,11 @@ export const dynamicGasHandlers: Map<number, AsyncDynamicGasHandler> = new Map([
       gas.iadd(subMemUsage(runState, inOffset, inLength))
       gas.iadd(subMemUsage(runState, outOffset, outLength))
       gas.iadd(accessAddressEIP2929(runState, toAddress))
-      const gasLimit = maxCallGas(currentGasLimit, runState.eei.getGasLeft().isub(gas), runState) // we set TangerineWhistle or later to true here, as STATICCALL was available from Byzantium (which is after TangerineWhistle)
+      const gasLimit = maxCallGas(
+        currentGasLimit.clone(),
+        runState.eei.getGasLeft().isub(gas),
+        runState
+      ) // we set TangerineWhistle or later to true here, as STATICCALL was available from Byzantium (which is after TangerineWhistle)
 
       runState.messageGasLimit = gasLimit
     },
