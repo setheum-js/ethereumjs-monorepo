@@ -53,7 +53,7 @@ export const dynamicGasHandlers: Map<number, AsyncDynamicGasHandler> = new Map([
     /* CALLDATACOPY */
     0x37,
     async function (runState: RunState, gas: BN): Promise<void> {
-      const [memOffset /*dataOffset*/, , dataLength] = runState.stack.peek(3)
+      const [memOffset, _dataOffset, dataLength] = runState.stack.peek(3)
 
       gas.iadd(subMemUsage(runState, memOffset, dataLength))
       if (!dataLength.eqn(0)) {
@@ -67,7 +67,7 @@ export const dynamicGasHandlers: Map<number, AsyncDynamicGasHandler> = new Map([
     /* CODECOPY */
     0x39,
     async function (runState: RunState, gas: BN): Promise<void> {
-      const [memOffset /*codeOffset*/, , dataLength] = runState.stack.peek(3)
+      const [memOffset, _codeOffset, dataLength] = runState.stack.peek(3)
 
       gas.iadd(subMemUsage(runState, memOffset, dataLength))
       if (!dataLength.eqn(0)) {
@@ -90,7 +90,7 @@ export const dynamicGasHandlers: Map<number, AsyncDynamicGasHandler> = new Map([
     /* EXTCODECOPY */
     0x3c,
     async function (runState: RunState, gas: BN): Promise<void> {
-      const [addressBN, memOffset /*codeOffset*/, , dataLength] = runState.stack.peek(4)
+      const [addressBN, memOffset, _codeOffset, dataLength] = runState.stack.peek(4)
 
       gas.iadd(subMemUsage(runState, memOffset, dataLength))
       const address = new Address(addressToBuffer(addressBN))
@@ -194,7 +194,8 @@ export const dynamicGasHandlers: Map<number, AsyncDynamicGasHandler> = new Map([
       }
 
       // We have to do this after the Istanbul (EIP2200) checks.
-      // Otherwise, we might run out of gas, due to "sentry check" of 2300 gas, if we deduct extra gas first.
+      // Otherwise, we might run out of gas, due to "sentry check" of 2300 gas,
+      // if we deduct extra gas first.
       gas.iadd(accessStorageEIP2929(runState, keyBuf, true))
     },
   ],
@@ -229,7 +230,7 @@ export const dynamicGasHandlers: Map<number, AsyncDynamicGasHandler> = new Map([
       if (runState.eei.isStatic()) {
         trap(ERROR.STATIC_STATE_CHANGE)
       }
-      const [, /*value*/ offset, length] = runState.stack.peek(3)
+      const [_value, offset, length] = runState.stack.peek(3)
 
       gas.iadd(accessAddressEIP2929(runState, runState.eei.getAddress(), false))
 
@@ -268,7 +269,8 @@ export const dynamicGasHandlers: Map<number, AsyncDynamicGasHandler> = new Map([
         }
       } else if (!(await runState.eei.accountExists(toAddress))) {
         // We are before Spurious Dragon and the account does not exist.
-        // Call new account gas: account does not exist (it is not in the state trie, not even as an "empty" account)
+        // Call new account gas: account does not exist
+        // (it is not in the state trie, not even as an "empty" account)
         gas.iadd(new BN(runState._common.param('gasPrices', 'callNewAccount')))
       }
 
@@ -277,7 +279,8 @@ export const dynamicGasHandlers: Map<number, AsyncDynamicGasHandler> = new Map([
         runState.eei.getGasLeft().isub(gas),
         runState
       )
-      // note that TangerineWhistle or later this cannot happen (it could have ran out of gas prior to getting here though)
+      // note that TangerineWhistle or later this cannot happen
+      // (it could have ran out of gas prior to getting here though)
       if (gasLimit.gt(runState.eei.getGasLeft().isub(gas))) {
         trap(ERROR.OUT_OF_GAS)
       }
@@ -315,7 +318,8 @@ export const dynamicGasHandlers: Map<number, AsyncDynamicGasHandler> = new Map([
         runState.eei.getGasLeft().isub(gas),
         runState
       )
-      // note that TangerineWhistle or later this cannot happen (it could have ran out of gas prior to getting here though)
+      // note that TangerineWhistle or later this cannot happen
+      // (it could have ran out of gas prior to getting here though)
       if (gasLimit.gt(runState.eei.getGasLeft().isub(gas))) {
         trap(ERROR.OUT_OF_GAS)
       }
@@ -355,7 +359,8 @@ export const dynamicGasHandlers: Map<number, AsyncDynamicGasHandler> = new Map([
         runState.eei.getGasLeft().isub(gas),
         runState
       )
-      // note that TangerineWhistle or later this cannot happen (it could have ran out of gas prior to getting here though)
+      // note that TangerineWhistle or later this cannot happen
+      // (it could have ran out of gas prior to getting here though)
       if (gasLimit.gt(runState.eei.getGasLeft().isub(gas))) {
         trap(ERROR.OUT_OF_GAS)
       }
@@ -371,7 +376,7 @@ export const dynamicGasHandlers: Map<number, AsyncDynamicGasHandler> = new Map([
         trap(ERROR.STATIC_STATE_CHANGE)
       }
 
-      const [, /*value*/ offset, length /*salt*/] = runState.stack.peek(4)
+      const [_value, offset, length, _salt] = runState.stack.peek(4)
 
       gas.iadd(subMemUsage(runState, offset, length))
       gas.iadd(accessAddressEIP2929(runState, runState.eei.getAddress(), false))
