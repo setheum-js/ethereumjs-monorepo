@@ -65,13 +65,13 @@ export class Trie {
     this._deleteFromDB = deleteFromDB
 
     if (root) {
-      this.setRoot(root)
+      this.root.set(root)
     }
   }
 
   /** Sets the current root of the `trie` */
   set root(value: Buffer) {
-    this.setRoot(value)
+    this.root = value
   }
 
   /** Gets the current root of the `trie` */
